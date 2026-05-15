@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background-color: #f4f7f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 450px;
+    }
+    h1 { color: #2c3e50; margin-bottom: 10px; }
+    p { color: #7f8c8d; line-height: 1.6; margin-bottom: 25px; }
+    
+    /* Contenedor para poner los botones uno al lado del otro */
+    .botones-container {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 25px;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background 0.3s, transform 0.2s;
+    }
+    
+    /* Colores diferentes para cada botón */
+    .btn-login { background-color: #3498db; }
+    .btn-login:hover { background-color: #2980b9; transform: translateY(-2px); }
+    
+    .btn-registro { background-color: #2ecc71; }
+    .btn-registro:hover { background-color: #27ae60; transform: translateY(-2px); }
+    .btn-logout { background-color: #e74c3c; }
+    .btn-logout:hover { background-color: #c0392b; transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+  {% if user.is_authenticated %}
+    <h1>¡Bienvenido, {{ user.username }}!</h1>
+    <p>Ya puedes acceder a todas las funciones del Bingo Solidario.</p>
+    
+    <div class="botones-container">
+      <a href="{% url 'logout' %}" class="btn btn-logout">Cerrar Sesión</a>
+    </div>
+  {% else %}
+    <h1>Bingo Solidario</h1>
+    <p>Bienvenido al portal oficial. Por favor, inicia sesión o regístrate para comenzar.</p>
+    
+    <div class="botones-container">
+      <a href="{% url 'login' %}" class="btn btn-login">Iniciar Sesión</a>
+      <a href="{% url 'registro' %}" class="btn btn-registro">Registrarme</a>
+    </div>
+  {% endif %}
+</div>
+
+</body>
+</html>
+

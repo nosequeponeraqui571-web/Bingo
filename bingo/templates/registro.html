@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bingo Solidario - Registro</title>
+  <style>
+    /* Mismos estilos limpios para mantener la coherencia visual */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .auth-card {
+      background-color: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      width: 400px;
+    }
+
+    h2 { 
+      color: #1a73e8; 
+      text-align: center; 
+      margin-bottom: 20px; 
+    }
+    
+    /* Ajustes para que el formulario que inyecta Django se vea moderno */
+    form p {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 15px;
+    }
+
+    form label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #5f6368;
+      margin-bottom: 5px;
+    }
+
+    form input, select {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    form input:focus, select:focus {
+      outline: none;
+      border-color: #1a73e8;
+    }
+
+    /* Estilo para los mensajes de error (ej: contraseña corta) */
+    .errorlist { 
+      color: #d93025; 
+      list-style: none; 
+      padding: 0; 
+      font-size: 13px; 
+      margin-top: 5px;
+    }
+
+    .btn-registrar {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background 0.3s;
+    }
+
+    .btn-registrar:hover { background-color: #1557b0; }
+
+    .login-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #1a73e8;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <h2>Crear Cuenta de Jugador</h2>
+    
+    <form method="POST">
+      {% csrf_token %}
+      
+      {{ formulario.as_p }}
+      
+      <p>
+        <label for="tipo_jugador">Modalidad de Juego:</label>
+        <select name="tipo_jugador" id="tipo_jugador" required>
+          <option value="" disabled selected>-- Selecciona cómo vas a jugar --</option>
+    
+          {% for tipo in tipos %}
+            <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
+          {% endfor %}
+    
+        </select>
+      </p>
+
+      <button type="submit" class="btn-registrar">Registrarme</button>
+    </form>
+
+    <a href="{% url 'login' %}" class="login-link">¿Ya tienes cuenta? Inicia sesión aquí</a>
+  </div>
+
+</body>
+</html>
+
