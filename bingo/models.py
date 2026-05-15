@@ -1,78 +1,308 @@
 from django.db import models
 from django.contrib.auth.models import User
 # Create your models here.
+from django.db.models import Q
+from django.utils import timezone
 
+# ==========================================
+# IMAGEN 1
+# ==========================================
 
 class TipoSocio(models.Model):
     idtiposocio = models.AutoField(primary_key=True)
-    nombretiposocio = models.CharField(max_length=100, unique=True, null=False, blank=False)
-    roltiposocio = models.CharField(max_length=50, unique=True, null=False, blank=False)
+    nombretiposocio = models.CharField(max_length=100, unique=True)
+    roltiposocio = models.CharField(max_length=50, unique=True)
     descripciondetiposocio = models.CharField(max_length=200, null=True, blank=True)
 
     class Meta:
         db_table = 'TipoSocio'
+        # Las restricciones UNIQUE ya se aplican con unique=True en los campos.
 
 
 class Socio(models.Model):
     idsocio = models.AutoField(primary_key=True)
-    idtiposocio = models.ForeignKey(
-        TipoSocio, 
-        on_delete=models.RESTRICT, 
-        db_column='idtiposocio'
-    )
-    primernombresocio = models.CharField(max_length=40, null=False, blank=False)
+    idtiposocio = models.ForeignKey(TipoSocio, on_delete=models.RESTRICT, db_column='idtiposocio')
+    primernombresocio = models.CharField(max_length=40)
     segundonombresocio = models.CharField(max_length=40, null=True, blank=True)
-    primerapellidosocio = models.CharField(max_length=40, null=False, blank=False)
-    segundoapellidosocio = models.CharField(max_length=40, null=False, blank=False)
-    cisocio = models.CharField(max_length=10, unique=True, null=False, blank=False)
-    fechanacimientosocio = models.DateField(null=False, blank=False)
-    telefonopersonalsocio = models.CharField(max_length=10, null=False, blank=False)
+    primerapellidosocio = models.CharField(max_length=40)
+    segundoapellidosocio = models.CharField(max_length=40)
+    cisocio = models.CharField(max_length=10, unique=True)
+    fechanacimientosocio = models.DateField()
+    telefonopersonalsocio = models.CharField(max_length=10)
     telefonotrabajosocio = models.CharField(max_length=25, null=True, blank=True)
-    direcciondomiciliosocio = models.CharField(max_length=255, null=False, blank=False)
+    direcciondomiciliosocio = models.CharField(max_length=255)
     direcciontrabajosocio = models.CharField(max_length=255, null=True, blank=True)
     sexosocio = models.CharField(max_length=1, null=True, blank=True)
-    estadosocio = models.CharField(max_length=10, null=False, blank=False)
+    estadosocio = models.CharField(max_length=10)
 
     class Meta:
         db_table = 'Socio'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(sexosocio__in=['H', 'M']), 
+                check=Q(sexosocio__in=['H', 'M']),
                 name='chk_socio_sexosocio'
+            ),
+            models.CheckConstraint(
+                check=Q(estadosocio__in=['Activo', 'Inactivo']),
+                name='chk_socio_estadosocio'
             )
         ]
 
 
+# ==========================================
+# IMAGEN 2
+# ==========================================
+
+class CuentaBancaria(models.Model):
+    idcuentabancaria = models.AutoField(primary_key=True)
+    idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
+    nombrebanco = models.CharField(max_length=100)
+    numerocuenta = models.CharField(max_length=30, unique=True)
+    tipocuenta = models.CharField(max_length=20)
+    esprincipal = models.BooleanField(default=False, unique=True) 
+    fecharegistro = models.DateTimeField(default=timezone.now)
+    estadocuenta = models.CharField(max_length=10)
+
+    class Meta:
+        db_table = 'CuentaBancaria'
+        constraints = [
+            models.CheckConstraint(
+                check=Q(tipocuenta__in=['Ahorro', 'Corriente']),
+                name='chk_cuentabancaria_tipocuenta'
+            )
+        ]
+    # Nota: El TRIGGER AFTER INSERT para bloquear si COUNT(idsocio) >= 2 
+    # deberá implementarse en la base de datos directamente o sobrescribiendo el método save() del modelo.
+
+
+class MetodoPago(models.Model):
+    idmetodopago = models.AutoField(primary_key=True)
+    nombremetodopago = models.CharField(max_length=50, unique=True)
+    descripcionmetodopago = models.CharField(max_length=200, null=True, blank=True)
+    estadometodopago = models.BooleanField(default=True)
+    urlmetodopago = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'MetodoPago'
+
+
+# ==========================================
+# IMAGEN 3
+# ==========================================
+
+class Prestamo(models.Model):
+    idprestamo = models.AutoField(primary_key=True)
+    idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
+    montoprestamosolicitado = models.DecimalField(max_digits=12, decimal_places=2)
+    tasainteres = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    montototalpagar = models.DecimalField(max_digits=12, decimal_places=2)
+    saldopendiente = models.DecimalField(max_digits=12, decimal_places=2)
+    numerocuotas = models.IntegerField(default=1)
+    fechasolicitud = models.DateField()
+    fechavencimiento = models.DateField()
+    estadoprestamo = models.CharField(max_length=20)
+
+    class Meta:
+        db_table = 'Prestamo'
+        constraints = [
+            models.CheckConstraint(
+                check=Q(estadoprestamo__in=['Solicitado', 'Aprobado', 'En espera', 'Liquidado']),
+                name='chk_prestamo_estadoprestamo'
+            ),
+            models.CheckConstraint(
+                check=Q(montoprestamosolicitado__gte=0),
+                name='chk_prestamo_montoprestamosolicitado'
+            ),
+            models.CheckConstraint(
+                check=Q(numerocuotas__gte=1),
+                name='chk_prestamo_numerocuotas'
+            )
+        ]
+
+
+class Pago(models.Model):
+    idpago = models.AutoField(primary_key=True)
+    idprestamo = models.ForeignKey(Prestamo, on_delete=models.RESTRICT, db_column='idprestamo')
+    idmetodopago = models.ForeignKey(MetodoPago, on_delete=models.RESTRICT, db_column='idmetodopago')
+    montopagado = models.DecimalField(max_digits=10, decimal_places=2)
+    numeroreferencia = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    fechapago = models.DateTimeField()
+    fechaconfirmacionadmin = models.DateTimeField(null=True, blank=True)
+    comprobantepago = models.CharField(max_length=255, null=True, blank=True)
+    estadopago = models.CharField(max_length=20, null=True, blank=True)
+
+    class Meta:
+        db_table = 'Pago'
+        constraints = [
+            models.CheckConstraint(
+                check=Q(estadopago__in=['Pendiente', 'Validado', 'Rechazado']),
+                name='chk_pago_estadopago'
+            )
+        ]
+
+
+# ==========================================
+# IMAGEN 4
+# ==========================================
+
+class Bingo(models.Model):
+    idbingo = models.AutoField(primary_key=True)
+    titulobingo = models.CharField(max_length=150)
+    fechaprogramadabingo = models.DateTimeField()
+    tipobingo = models.CharField(max_length=20)
+    lugarbingo = models.CharField(max_length=255, null=True, blank=True)
+    urlsesionbingo = models.CharField(max_length=255, null=True, blank=True)
+    preciocarton = models.DecimalField(max_digits=10, decimal_places=2)
+    premiomayor = models.DecimalField(max_digits=10, decimal_places=2)
+    descripcionpremiomayor = models.CharField(max_length=100)
+    estadobingo = models.CharField(max_length=20)
+    rutaimagenpremiomayor = models.CharField(max_length=300, null=True, blank=True)
+    urlvideopromocional = models.CharField(max_length=300, null=True, blank=True)
+    descripcionpremios = models.CharField(max_length=500, null=True, blank=True)
+
+    class Meta:
+        db_table = 'Bingo'
+        constraints = [
+            models.CheckConstraint(
+                check=Q(estadobingo__in=['Programado', 'En Curso', 'Finalizado', 'Cancelado']),
+                name='chk_bingo_estadobingo'
+            )
+        ]
+
+
+class Ahorro(models.Model):
+    idahorro = models.AutoField(primary_key=True)
+    idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
+    idbingo = models.ForeignKey(Bingo, on_delete=models.RESTRICT, db_column='idbingo')
+    tipoahorro = models.CharField(max_length=50)
+    montoahorro = models.DecimalField(max_digits=10, decimal_places=2)
+    fechaahorro = models.DateTimeField()
+    comentarioahorro = models.CharField(max_length=100, null=True, blank=True)
+    estado = models.CharField(max_length=25)
+
+    class Meta:
+        db_table = 'Ahorro'
+        constraints = [
+            models.CheckConstraint(
+                check=Q(tipoahorro__in=['Obligatorio', 'Voluntario']),
+                name='chk_ahorro_tipoahorro'
+            ),
+            models.CheckConstraint(
+                check=Q(estado__in=['Activo', 'Inactivo']),
+                name='chk_ahorro_estado'
+            )
+        ]
+
+
+# ==========================================
+# IMAGEN 5
+# ==========================================
+
+class Jugador(models.Model):
+    idjugador = models.AutoField(primary_key=True)
+    idsocio = models.ForeignKey(Socio, on_delete=models.SET_NULL, null=True, blank=True, db_column='idsocio') # Nullable por la nota "verdad para los socios, pero no para los jugadore"
+    avatarjugador = models.CharField(max_length=255, null=True, blank=True)
+    aliasjugador = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    correojugador = models.CharField(max_length=200, unique=True, null=True, blank=True)
+    fecharegistrojugador = models.DateTimeField()
+    saldocreditojugador = models.DecimalField(max_digits=10, decimal_places=2)
+    estadocuentajugador = models.CharField(max_length=20)
+
+    class Meta:
+        db_table = 'Jugador'
+        constraints = [
+            models.CheckConstraint(
+                check=Q(estadocuentajugador__in=['Activo', 'Suspendido', 'Moroso']),
+                name='chk_jugador_estadocuentajugador'
+            )
+        ]
+
+
+class Carton(models.Model):
+    idcarton = models.AutoField(primary_key=True)
+    idjugador = models.ForeignKey(Jugador, on_delete=models.RESTRICT, null=True, blank=True, db_column='idjugador')
+    idpartida = models.ForeignKey('PartidaBingo', on_delete=models.RESTRICT, null=True, blank=True, db_column='idpartida')
+    codigocarton = models.CharField(max_length=30, unique=True)
+    matriznumeros = models.TextField() # Usamos TextField en lugar de varchar(max)
+    indicevictoria = models.IntegerField(default=0, null=True, blank=True)
+    preciopagado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    fechacompra = models.DateTimeField(null=True, blank=True)
+    estadocarton = models.CharField(max_length=20, default='Disponible')
+
+    class Meta:
+        db_table = 'Carton'
+        constraints = [
+            models.CheckConstraint(
+                check=Q(preciopagado__gte=0),
+                name='chk_carton_preciopagado'
+            )
+            # Nota: La validación ISJSON(matriznumeros) = 1 deberá manejarse a nivel de BD o
+            # usando un JSONField nativo de Django, pero he mantenido TextField como pediste.
+        ]
+
+
+# ==========================================
+# IMAGEN 6
+# ==========================================
+
+class PlataformaJuego(models.Model):
+    idplataformajuego = models.AutoField(primary_key=True)
+    nombreplataforma = models.CharField(max_length=25, unique=True)
+    urlplataforma = models.CharField(max_length=255)
+    descripcionplataforma = models.CharField(max_length=200, null=True, blank=True)
+    estadoplataforma = models.BooleanField()
+    fechaadquisicionlicencia = models.DateField(null=True, blank=True)
+    fechavencimientolicencia = models.DateField(null=True, blank=True)
+    contactoplataforma = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        db_table = 'PlataformaJuego'
+
+
 class SesionJuego(models.Model):
     idsesion = models.AutoField(primary_key=True)
-    estadosesion = models.CharField(max_length=20, null=False, blank=False)
-    tokenconexion = models.CharField(max_length=255, unique=True, null=False, blank=False)
+    idplataforma = models.ForeignKey(PlataformaJuego, on_delete=models.RESTRICT, db_column='idplataforma')
+    idjugador = models.ForeignKey(Jugador, on_delete=models.RESTRICT, db_column='idjugador')
+    idpartida = models.ForeignKey('PartidaJuego', on_delete=models.RESTRICT, db_column='idpartida')
+    fechainiciosesion = models.DateTimeField()
+    fechafinsesion = models.DateTimeField(null=True, blank=True)
+    ipconexion = models.CharField(max_length=50, null=True, blank=True)
+    dispositivoconexion = models.CharField(max_length=50, null=True, blank=True)
+    estadosesion = models.CharField(max_length=15)
+    latenciaping = models.IntegerField(null=True, blank=True)
+    navegadorweb = models.CharField(max_length=150, null=True, blank=True)
+    tokenconexion = models.CharField(max_length=255, unique=True)
+    motivocierre = models.CharField(max_length=50, null=True, blank=True)
 
     class Meta:
         db_table = 'SesionJuego'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(estadosesion__in=['Activa', 'Finalizada', 'Caida']), 
-                name='chk_sesion_estadosesion'
+                check=Q(estadosesion__in=['Activa', 'Finalizada', 'Caida']),
+                name='chk_sesionjuego_estadosesion'
             )
         ]
 
 
+# ==========================================
+# IMAGEN 7
+# ==========================================
+
 class Regalo(models.Model):
     idregalo = models.AutoField(primary_key=True)
-    nombreregalo = models.CharField(max_length=100, null=False, blank=False)
+    nombreregalo = models.CharField(max_length=100)
     descripcionregalo = models.CharField(max_length=200, null=True, blank=True)
-    valorregalo = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
-    fechaentregaregalo = models.DateTimeField(null=False, blank=False)
-    estadoregalo = models.CharField(max_length=20, null=False, blank=False)
-    fechaultimaactualizacion = models.DateTimeField(null=False, blank=False)
-    urlimagen = models.CharField(max_length=255, null=False, blank=False)
+    valorregalo = models.DecimalField(max_digits=10, decimal_places=2)
+    fechaentregaregalo = models.DateTimeField()
+    estadoregalo = models.CharField(max_length=20)
+    fechaultimaactualizacion = models.DateTimeField()
+    urlimagen = models.CharField(max_length=255)
 
     class Meta:
         db_table = 'Regalo'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(estadoregalo__in=['Acumulado', 'Sorteado', 'Entregado']), 
+                check=Q(estadoregalo__in=['Acumulado', 'Sorteado', 'Entregado']),
                 name='chk_regalo_estadoregalo'
             )
         ]
@@ -80,125 +310,25 @@ class Regalo(models.Model):
 
 class AporteSemanal(models.Model):
     idaporte = models.AutoField(primary_key=True)
-    idsocio = models.ForeignKey(
-        Socio, 
-        on_delete=models.RESTRICT, 
-        db_column='idsocio'
-    )
-    idregalo = models.ForeignKey(
-        Regalo, 
-        on_delete=models.RESTRICT, 
-        db_column='idregalo'
-    )
-    idpartida = models.IntegerField(null=True, blank=True) 
+    idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
+    idregalo = models.ForeignKey(Regalo, on_delete=models.RESTRICT, db_column='idregalo')
+    idpartida = models.ForeignKey('PartidaBingo', on_delete=models.RESTRICT, db_column='idpartida')
     numerosemana = models.IntegerField(null=True, blank=True)
-    fechaplanificadada = models.DateTimeField(null=False, blank=False)
+    fechaplanificadada = models.DateTimeField()
     fechaentregareal = models.DateTimeField(null=True, blank=True)
-    metodoingreso = models.CharField(max_length=50, null=False, blank=False) 
-    referenciaingreso = models.CharField(max_length=100, null=True, blank=True) 
+    metodoingreso = models.CharField(max_length=50)
+    referenciaingreso = models.CharField(max_length=100, null=True, blank=True)
     estadoaporte = models.CharField(max_length=20, null=True, blank=True)
 
     class Meta:
         db_table = 'AporteSemanal'
-
-
-class Ahorro(models.Model):
-    idahorro = models.AutoField(primary_key=True)
-    idsocio = models.ForeignKey(
-        Socio, 
-        on_delete=models.RESTRICT, 
-        db_column='idsocio'
-    )
-    fecharegistro = models.DateTimeField(null=False, blank=False)
-    montoahorrado = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
-    origenahorro = models.CharField(max_length=50, null=False, blank=False)
-    estadoahorro = models.CharField(max_length=20, null=False, blank=False)
-    fechaultimaactualizacion = models.DateTimeField(null=False, blank=False)
-
-    class Meta:
-        db_table = 'Ahorro'
         constraints = [
             models.CheckConstraint(
-                check=models.Q(estadoahorro__in=['Activo', 'Retirado', 'Congelado']), 
-                name='chk_ahorro_estadoahorro'
-            )
-        ]
-
-
-class Prestamo(models.Model):
-    idprestamo = models.AutoField(primary_key=True)
-    idsocio = models.ForeignKey(
-        Socio, 
-        on_delete=models.RESTRICT, 
-        db_column='idsocio'
-    )
-    fechasolicitud = models.DateTimeField(null=False, blank=False)
-    montosolicitado = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
-    plazomeses = models.IntegerField(null=False, blank=False)
-    tasa_interes = models.DecimalField(max_digits=5, decimal_places=2, null=False, blank=False)
-    estado_prestamo = models.CharField(max_length=20, null=False, blank=False)
-    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        db_table = 'Prestamo'
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(estado_prestamo__in=['Pendiente', 'Aprobado', 'Rechazado', 'Pagado']), 
-                name='chk_prestamo_estado_prestamo'
+                check=Q(estadoaporte__in=['Al Dia', 'Atrasado']),
+                name='chk_aportesemanal_estadoaporte'
             ),
             models.CheckConstraint(
-                check=models.Q(plazomeses__lte=12), 
-                name='chk_prestamo_plazomeses'
-            )
-        ]
-
-
-class Garante(models.Model):
-    idgarante = models.AutoField(primary_key=True)
-    idprestamo = models.ForeignKey(
-        Prestamo, 
-        on_delete=models.RESTRICT, 
-        db_column='idprestamo'
-    )
-    idsocio = models.ForeignKey(
-        Socio, 
-        on_delete=models.RESTRICT, 
-        db_column='idsocio'
-    )
-    montogarantia = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
-    estado_garantia = models.CharField(max_length=20, null=False, blank=False)
-
-    class Meta:
-        db_table = 'Garante'
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(estado_garantia__in=['Activo', 'Liberado', 'Ejecutado']), 
-                name='chk_garante_estado_garantia'
-            )
-        ]
-
-
-class Utilidad(models.Model):
-    idutilidad = models.AutoField(primary_key=True)
-    idsocio = models.ForeignKey(
-        Socio, 
-        on_delete=models.RESTRICT, 
-        db_column='idsocio'
-    )
-    fechareparticion = models.DateTimeField(null=False, blank=False)
-    montoutilidad = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
-    origen_utilidad = models.CharField(max_length=50, null=False, blank=False)
-    estado_utilidad = models.CharField(max_length=20, null=False, blank=False)
-
-    class Meta:
-        db_table = 'Utilidad'
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(origen_utilidad__in=['Bingo', 'Interes Prestamo']), 
-                name='chk_utilidad_origen_utilidad'
-            ),
-            models.CheckConstraint(
-                check=models.Q(estado_utilidad__in=['Pendiente', 'Pagado']), 
-                name='chk_utilidad_estado_utilidad'
+                check=Q(metodoingreso__in=['Efectivo', 'Transferencia', 'Fisico']),
+                name='chk_aportesemanal_metodoingreso'
             )
         ]
