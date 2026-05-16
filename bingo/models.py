@@ -2,9 +2,6 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
-# ==========================================
-# IMAGEN 1: Socios
-# ==========================================
 class TipoSocio(models.Model):
     idtiposocio = models.AutoField(primary_key=True)
     nombretiposocio = models.CharField(max_length=100, unique=True)
@@ -43,10 +40,6 @@ class Socio(models.Model):
             )
         ]
 
-
-# ==========================================
-# IMAGEN 2: Cuentas
-# ==========================================
 class CuentaBancaria(models.Model):
     idcuentabancaria = models.AutoField(primary_key=True)
     idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
@@ -76,10 +69,6 @@ class MetodoPago(models.Model):
     class Meta:
         db_table = 'MetodoPago'
 
-
-# ==========================================
-# IMAGEN 3: Préstamos y Pagos
-# ==========================================
 class Prestamo(models.Model):
     idprestamo = models.AutoField(primary_key=True)
     idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
@@ -129,10 +118,6 @@ class Pago(models.Model):
             )
         ]
 
-
-# ==========================================
-# IMAGEN 4: Bingo y Ahorros
-# ==========================================
 class Bingo(models.Model):
     idbingo = models.AutoField(primary_key=True)
     titulobingo = models.CharField(max_length=150)
@@ -180,10 +165,6 @@ class Ahorro(models.Model):
             )
         ]
 
-
-# ==========================================
-# IMAGEN 5: Jugadores
-# ==========================================
 class Jugador(models.Model):
     idjugador = models.AutoField(primary_key=True)
     idsocio = models.ForeignKey(Socio, on_delete=models.SET_NULL, null=True, blank=True, db_column='idsocio')
@@ -204,9 +185,6 @@ class Jugador(models.Model):
         ]
 
 
-# ==========================================
-# NUEVO: PARTIDA BINGO
-# ==========================================
 class PartidaBingo(models.Model):
     idpartidabingo = models.AutoField(primary_key=True)
     idbingo = models.ForeignKey(Bingo, on_delete=models.RESTRICT, db_column='idbingo')
@@ -232,10 +210,6 @@ class PartidaBingo(models.Model):
             )
         ]
 
-
-# ==========================================
-# IMAGEN 5 (Cont.): Cartones
-# ==========================================
 class Carton(models.Model):
     idcarton = models.AutoField(primary_key=True)
     idjugador = models.ForeignKey(Jugador, on_delete=models.RESTRICT, null=True, blank=True, db_column='idjugador')
@@ -257,9 +231,6 @@ class Carton(models.Model):
         ]
 
 
-# ==========================================
-# IMAGEN 6: Plataforma y Sesiones
-# ==========================================
 class PlataformaJuego(models.Model):
     idplataformajuego = models.AutoField(primary_key=True)
     nombreplataforma = models.CharField(max_length=25, unique=True)
@@ -277,7 +248,7 @@ class SesionJuego(models.Model):
     idsesion = models.AutoField(primary_key=True)
     idplataforma = models.ForeignKey(PlataformaJuego, on_delete=models.RESTRICT, db_column='idplataforma')
     idjugador = models.ForeignKey(Jugador, on_delete=models.RESTRICT, db_column='idjugador')
-    idpartida = models.ForeignKey(PartidaBingo, on_delete=models.RESTRICT, db_column='idpartida') # <--- Cambiado a PartidaBingo
+    idpartida = models.ForeignKey(PartidaBingo, on_delete=models.RESTRICT, db_column='idpartida')  
     fechainiciosesion = models.DateTimeField()
     fechafinsesion = models.DateTimeField(null=True, blank=True)
     ipconexion = models.CharField(max_length=50, null=True, blank=True)
@@ -298,9 +269,6 @@ class SesionJuego(models.Model):
         ]
 
 
-# ==========================================
-# IMAGEN 7: Regalos y Aportes
-# ==========================================
 class Regalo(models.Model):
     idregalo = models.AutoField(primary_key=True)
     nombreregalo = models.CharField(max_length=100)

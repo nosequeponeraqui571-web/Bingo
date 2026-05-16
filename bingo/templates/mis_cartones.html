@@ -1,0 +1,105 @@
+html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Cartones - Bingo Solidario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800">
+
+    <!-- Navbar Simple -->
+    <nav class="bg-blue-700 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <a href="{% url 'inicio' %}" class="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition">
+                    <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    <span class="font-bold text-xl tracking-wide">Volver al Lobby</span>
+                </a>
+                <div class="flex items-center space-x-2">
+                    <div class="bg-blue-600 p-2 rounded-full">
+                        <i data-lucide="user" class="w-5 h-5"></i>
+                    </div>
+                    <span class="font-medium hidden sm:block">{{ user.username }}</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="mb-8 flex items-center">
+            <i data-lucide="ticket" class="w-8 h-8 mr-3 text-blue-600"></i>
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900">Mis Cartones</h1>
+                <p class="text-slate-500 mt-1">Aquí están todos los cartones que has adquirido.</p>
+            </div>
+        </div>
+
+        {% if cartones %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for carton in cartones %}
+                    <!-- Tarjeta de Cartón -->
+                    <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200 overflow-hidden">
+                        
+                        <!-- Cabecera de la tarjeta con información -->
+                        <div class="bg-slate-800 p-3 text-white">
+                            <h3 class="font-bold text-sm truncate">{{ carton.bingo_titulo }}</h3>
+                            <p class="text-xs text-slate-300">Fecha: {{ carton.fecha|date:"d/m/Y" }}</p>
+                        </div>
+
+                        <!-- Letras del Bingo -->
+                        <div class="bg-blue-700 grid grid-cols-5 text-center text-white font-black text-xl md:text-2xl py-2 shadow-inner">
+                            <div class="border-r border-blue-600/50">B</div>
+                            <div class="border-r border-blue-600/50">I</div>
+                            <div class="border-r border-blue-600/50">N</div>
+                            <div class="border-r border-blue-600/50">G</div>
+                            <div>O</div>
+                        </div>
+
+                        <!-- Cuadrícula 5x5 de los números -->
+                        <div class="p-2 grid grid-cols-5 gap-1 bg-slate-50">
+                            {% for fila in carton.matriz %}
+                                {% for celda in fila %}
+                                    <div class="flex items-center justify-center aspect-square rounded-lg border-2 text-lg md:text-xl font-bold
+                                        {% if celda == 'LIBRE' %}
+                                            bg-yellow-100 border-yellow-300 text-yellow-800 text-[10px] md:text-xs
+                                        {% else %}
+                                            bg-white border-slate-200 text-slate-700
+                                        {% endif %}">
+                                        {{ celda }}
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+
+                        <!-- Pie del cartón con el serial -->
+                        <div class="bg-slate-100 py-2 px-4 text-xs font-mono text-slate-500 flex justify-between border-t border-slate-200">
+                            <span>N° {{ carton.codigo }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <i data-lucide="ticket-x" class="w-16 h-16 mx-auto text-slate-300 mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-700">Aún no tienes cartones</h3>
+                <p class="text-slate-500 mt-2 mb-6">Explora el lobby y adquiere cartones para participar en los bingos.</p>
+                <a href="{% url 'inicio' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition">
+                    Ir al Lobby
+                </a>
+            </div>
+        {% endif %}
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
+<a href="{% url 'mis_cartones' %}" class="mt-4 sm:mt-0 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg shadow-sm hover:bg-slate-50 flex items-center transition-all">
+    <i data-lucide="ticket" class="w-5 h-5 mr-2 text-blue-600"></i>
+    Mis Cartones
+</a>
