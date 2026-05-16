@@ -1,13 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import User
-# Create your models here.
 from django.db.models import Q
 from django.utils import timezone
 
 # ==========================================
-# IMAGEN 1
+# IMAGEN 1: Socios
 # ==========================================
-
 class TipoSocio(models.Model):
     idtiposocio = models.AutoField(primary_key=True)
     nombretiposocio = models.CharField(max_length=100, unique=True)
@@ -16,8 +13,6 @@ class TipoSocio(models.Model):
 
     class Meta:
         db_table = 'TipoSocio'
-        # Las restricciones UNIQUE ya se aplican con unique=True en los campos.
-
 
 class Socio(models.Model):
     idsocio = models.AutoField(primary_key=True)
@@ -39,20 +34,19 @@ class Socio(models.Model):
         db_table = 'Socio'
         constraints = [
             models.CheckConstraint(
-                check=Q(sexosocio__in=['H', 'M']),
+                condition=Q(sexosocio__in=['H', 'M']),
                 name='chk_socio_sexosocio'
             ),
             models.CheckConstraint(
-                check=Q(estadosocio__in=['Activo', 'Inactivo']),
+                condition=Q(estadosocio__in=['Activo', 'Inactivo']),
                 name='chk_socio_estadosocio'
             )
         ]
 
 
 # ==========================================
-# IMAGEN 2
+# IMAGEN 2: Cuentas
 # ==========================================
-
 class CuentaBancaria(models.Model):
     idcuentabancaria = models.AutoField(primary_key=True)
     idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
@@ -67,13 +61,10 @@ class CuentaBancaria(models.Model):
         db_table = 'CuentaBancaria'
         constraints = [
             models.CheckConstraint(
-                check=Q(tipocuenta__in=['Ahorro', 'Corriente']),
+                condition=Q(tipocuenta__in=['Ahorro', 'Corriente']),
                 name='chk_cuentabancaria_tipocuenta'
             )
         ]
-    # Nota: El TRIGGER AFTER INSERT para bloquear si COUNT(idsocio) >= 2 
-    # deberá implementarse en la base de datos directamente o sobrescribiendo el método save() del modelo.
-
 
 class MetodoPago(models.Model):
     idmetodopago = models.AutoField(primary_key=True)
@@ -87,9 +78,8 @@ class MetodoPago(models.Model):
 
 
 # ==========================================
-# IMAGEN 3
+# IMAGEN 3: Préstamos y Pagos
 # ==========================================
-
 class Prestamo(models.Model):
     idprestamo = models.AutoField(primary_key=True)
     idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
@@ -106,19 +96,18 @@ class Prestamo(models.Model):
         db_table = 'Prestamo'
         constraints = [
             models.CheckConstraint(
-                check=Q(estadoprestamo__in=['Solicitado', 'Aprobado', 'En espera', 'Liquidado']),
+                condition=Q(estadoprestamo__in=['Solicitado', 'Aprobado', 'En espera', 'Liquidado']),
                 name='chk_prestamo_estadoprestamo'
             ),
             models.CheckConstraint(
-                check=Q(montoprestamosolicitado__gte=0),
+                condition=Q(montoprestamosolicitado__gte=0),
                 name='chk_prestamo_montoprestamosolicitado'
             ),
             models.CheckConstraint(
-                check=Q(numerocuotas__gte=1),
+                condition=Q(numerocuotas__gte=1),
                 name='chk_prestamo_numerocuotas'
             )
         ]
-
 
 class Pago(models.Model):
     idpago = models.AutoField(primary_key=True)
@@ -135,16 +124,15 @@ class Pago(models.Model):
         db_table = 'Pago'
         constraints = [
             models.CheckConstraint(
-                check=Q(estadopago__in=['Pendiente', 'Validado', 'Rechazado']),
+                condition=Q(estadopago__in=['Pendiente', 'Validado', 'Rechazado']),
                 name='chk_pago_estadopago'
             )
         ]
 
 
 # ==========================================
-# IMAGEN 4
+# IMAGEN 4: Bingo y Ahorros
 # ==========================================
-
 class Bingo(models.Model):
     idbingo = models.AutoField(primary_key=True)
     titulobingo = models.CharField(max_length=150)
@@ -164,11 +152,10 @@ class Bingo(models.Model):
         db_table = 'Bingo'
         constraints = [
             models.CheckConstraint(
-                check=Q(estadobingo__in=['Programado', 'En Curso', 'Finalizado', 'Cancelado']),
+                condition=Q(estadobingo__in=['Programado', 'En Curso', 'Finalizado', 'Cancelado']),
                 name='chk_bingo_estadobingo'
             )
         ]
-
 
 class Ahorro(models.Model):
     idahorro = models.AutoField(primary_key=True)
@@ -184,23 +171,22 @@ class Ahorro(models.Model):
         db_table = 'Ahorro'
         constraints = [
             models.CheckConstraint(
-                check=Q(tipoahorro__in=['Obligatorio', 'Voluntario']),
+                condition=Q(tipoahorro__in=['Obligatorio', 'Voluntario']),
                 name='chk_ahorro_tipoahorro'
             ),
             models.CheckConstraint(
-                check=Q(estado__in=['Activo', 'Inactivo']),
+                condition=Q(estado__in=['Activo', 'Inactivo']),
                 name='chk_ahorro_estado'
             )
         ]
 
 
 # ==========================================
-# IMAGEN 5
+# IMAGEN 5: Jugadores
 # ==========================================
-
 class Jugador(models.Model):
     idjugador = models.AutoField(primary_key=True)
-    idsocio = models.ForeignKey(Socio, on_delete=models.SET_NULL, null=True, blank=True, db_column='idsocio') # Nullable por la nota "verdad para los socios, pero no para los jugadore"
+    idsocio = models.ForeignKey(Socio, on_delete=models.SET_NULL, null=True, blank=True, db_column='idsocio')
     avatarjugador = models.CharField(max_length=255, null=True, blank=True)
     aliasjugador = models.CharField(max_length=100, unique=True, null=True, blank=True)
     correojugador = models.CharField(max_length=200, unique=True, null=True, blank=True)
@@ -212,18 +198,50 @@ class Jugador(models.Model):
         db_table = 'Jugador'
         constraints = [
             models.CheckConstraint(
-                check=Q(estadocuentajugador__in=['Activo', 'Suspendido', 'Moroso']),
+                condition=Q(estadocuentajugador__in=['Activo', 'Suspendido', 'Moroso']),
                 name='chk_jugador_estadocuentajugador'
             )
         ]
 
 
+# ==========================================
+# NUEVO: PARTIDA BINGO
+# ==========================================
+class PartidaBingo(models.Model):
+    idpartidabingo = models.AutoField(primary_key=True)
+    idbingo = models.ForeignKey(Bingo, on_delete=models.RESTRICT, db_column='idbingo')
+    idjugadorganador = models.ForeignKey(Jugador, on_delete=models.SET_NULL, null=True, blank=True, db_column='idjugadorganador')
+    nombreronda = models.CharField(max_length=100)
+    valorefectivo = models.DecimalField(max_digits=10, decimal_places=2)
+    premiomaterial = models.CharField(max_length=150)
+    estadopartida = models.CharField(max_length=20)
+    bolascantadas = models.TextField() # varchar(max)
+    ultimabola = models.IntegerField()
+    haydesempate = models.BooleanField(null=True, blank=True) # bit
+    idbingadores = models.TextField(null=True, blank=True) # varchar(max)
+    bolamayordesempate = models.IntegerField(null=True, blank=True)
+    horainicio = models.DateTimeField()
+    horafin = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'PartidaBingo'
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(estadopartida__in=['En Juego', 'Verificando', 'Desempate', 'Finalizada']),
+                name='chk_partidabingo_estadopartida'
+            )
+        ]
+
+
+# ==========================================
+# IMAGEN 5 (Cont.): Cartones
+# ==========================================
 class Carton(models.Model):
     idcarton = models.AutoField(primary_key=True)
     idjugador = models.ForeignKey(Jugador, on_delete=models.RESTRICT, null=True, blank=True, db_column='idjugador')
-    idpartida = models.ForeignKey('PartidaBingo', on_delete=models.RESTRICT, null=True, blank=True, db_column='idpartida')
+    idpartida = models.ForeignKey(PartidaBingo, on_delete=models.RESTRICT, null=True, blank=True, db_column='idpartida')
     codigocarton = models.CharField(max_length=30, unique=True)
-    matriznumeros = models.TextField() # Usamos TextField en lugar de varchar(max)
+    matriznumeros = models.TextField() 
     indicevictoria = models.IntegerField(default=0, null=True, blank=True)
     preciopagado = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     fechacompra = models.DateTimeField(null=True, blank=True)
@@ -233,18 +251,15 @@ class Carton(models.Model):
         db_table = 'Carton'
         constraints = [
             models.CheckConstraint(
-                check=Q(preciopagado__gte=0),
+                condition=Q(preciopagado__gte=0),
                 name='chk_carton_preciopagado'
             )
-            # Nota: La validación ISJSON(matriznumeros) = 1 deberá manejarse a nivel de BD o
-            # usando un JSONField nativo de Django, pero he mantenido TextField como pediste.
         ]
 
 
 # ==========================================
-# IMAGEN 6
+# IMAGEN 6: Plataforma y Sesiones
 # ==========================================
-
 class PlataformaJuego(models.Model):
     idplataformajuego = models.AutoField(primary_key=True)
     nombreplataforma = models.CharField(max_length=25, unique=True)
@@ -258,12 +273,11 @@ class PlataformaJuego(models.Model):
     class Meta:
         db_table = 'PlataformaJuego'
 
-
 class SesionJuego(models.Model):
     idsesion = models.AutoField(primary_key=True)
     idplataforma = models.ForeignKey(PlataformaJuego, on_delete=models.RESTRICT, db_column='idplataforma')
     idjugador = models.ForeignKey(Jugador, on_delete=models.RESTRICT, db_column='idjugador')
-    idpartida = models.ForeignKey('PartidaJuego', on_delete=models.RESTRICT, db_column='idpartida')
+    idpartida = models.ForeignKey(PartidaBingo, on_delete=models.RESTRICT, db_column='idpartida') # <--- Cambiado a PartidaBingo
     fechainiciosesion = models.DateTimeField()
     fechafinsesion = models.DateTimeField(null=True, blank=True)
     ipconexion = models.CharField(max_length=50, null=True, blank=True)
@@ -278,16 +292,15 @@ class SesionJuego(models.Model):
         db_table = 'SesionJuego'
         constraints = [
             models.CheckConstraint(
-                check=Q(estadosesion__in=['Activa', 'Finalizada', 'Caida']),
+                condition=Q(estadosesion__in=['Activa', 'Finalizada', 'Caida']),
                 name='chk_sesionjuego_estadosesion'
             )
         ]
 
 
 # ==========================================
-# IMAGEN 7
+# IMAGEN 7: Regalos y Aportes
 # ==========================================
-
 class Regalo(models.Model):
     idregalo = models.AutoField(primary_key=True)
     nombreregalo = models.CharField(max_length=100)
@@ -302,17 +315,16 @@ class Regalo(models.Model):
         db_table = 'Regalo'
         constraints = [
             models.CheckConstraint(
-                check=Q(estadoregalo__in=['Acumulado', 'Sorteado', 'Entregado']),
+                condition=Q(estadoregalo__in=['Acumulado', 'Sorteado', 'Entregado']),
                 name='chk_regalo_estadoregalo'
             )
         ]
-
 
 class AporteSemanal(models.Model):
     idaporte = models.AutoField(primary_key=True)
     idsocio = models.ForeignKey(Socio, on_delete=models.RESTRICT, db_column='idsocio')
     idregalo = models.ForeignKey(Regalo, on_delete=models.RESTRICT, db_column='idregalo')
-    idpartida = models.ForeignKey('PartidaBingo', on_delete=models.RESTRICT, db_column='idpartida')
+    idpartida = models.ForeignKey(PartidaBingo, on_delete=models.RESTRICT, db_column='idpartida')
     numerosemana = models.IntegerField(null=True, blank=True)
     fechaplanificadada = models.DateTimeField()
     fechaentregareal = models.DateTimeField(null=True, blank=True)
@@ -324,11 +336,11 @@ class AporteSemanal(models.Model):
         db_table = 'AporteSemanal'
         constraints = [
             models.CheckConstraint(
-                check=Q(estadoaporte__in=['Al Dia', 'Atrasado']),
+                condition=Q(estadoaporte__in=['Al Dia', 'Atrasado']),
                 name='chk_aportesemanal_estadoaporte'
             ),
             models.CheckConstraint(
-                check=Q(metodoingreso__in=['Efectivo', 'Transferencia', 'Fisico']),
+                condition=Q(metodoingreso__in=['Efectivo', 'Transferencia', 'Fisico']),
                 name='chk_aportesemanal_metodoingreso'
             )
         ]

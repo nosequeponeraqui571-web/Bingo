@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -58,7 +58,6 @@
       border-color: #1a73e8;
     }
 
-    /* Estilo para los mensajes de error (ej: contraseña corta) */
     .errorlist { 
       color: #d93025; 
       list-style: none; 
@@ -104,17 +103,7 @@
       
       {{ formulario.as_p }}
       
-      <p>
-        <label for="tipo_jugador">Modalidad de Juego:</label>
-        <select name="tipo_jugador" id="tipo_jugador" required>
-          <option value="" disabled selected>-- Selecciona cómo vas a jugar --</option>
-    
-          {% for tipo in tipos %}
-            <option value="{{ tipo.id }}">{{ tipo.nombre }}</option>
-          {% endfor %}
-    
-        </select>
-      </p>
+      <!-- Eliminamos el <select> de TipoJugador porque ya no existe en la base de datos -->
 
       <button type="submit" class="btn-registrar">Registrarme</button>
     </form>
@@ -124,4 +113,3 @@
 
 </body>
 </html>
-
